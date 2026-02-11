@@ -1,0 +1,79 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tank-war"
+version = "0.1.0"
+description = "坦克大戰遊戲 - 使用 Python 和 pygame 開發的經典街機遊戲"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+license = {text = "MIT"}
+authors = [
+    {name = "Developer", email = "dev@example.com"}
+]
+keywords = ["game", "pygame", "tank", "arcade"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: Chinese (Traditional)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Games/Entertainment :: Arcade"
+]
+dependencies = [
+    "pygame-ce>=2.5.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/example/tank-war"
+Documentation = "https://github.com/example/tank-war#readme"
+Repository = "https://github.com/example/tank-war"
+Issues = "https://github.com/example/tank-war/issues"
+
+[project.scripts]
+tank-war = "main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ["py39"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_mode = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+skip_glob = [".git/*", ".venv/*"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true

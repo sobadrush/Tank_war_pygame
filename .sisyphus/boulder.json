@@ -1,0 +1,13 @@
+{
+  "active_plan": "/Users/nsl_admin/Desktop/Project-Workspace/ai_workspace/tank_war/.sisyphus/plans/tank-battle-game.md",
+  "started_at": "2026-02-10T05:08:17.206Z",
+  "completed_at": "2026-02-10T05:45:00.000Z",
+  "session_ids": [
+    "ses_3ba18e638ffeZFwgZYOQ22Irwg"
+  ],
+  "plan_name": "tank-battle-game",
+  "agent": "atlas",
+  "status": "completed",
+  "tasks_completed": 28,
+  "total_tasks": 28
+}
