@@ -5,6 +5,7 @@
 坦克會檢查地圖邊界和障礙物碰撞，受傷後有短暫無敵時間。
 """
 
+from pathlib import Path
 from typing import List, Literal, Optional, Tuple
 
 import pygame
@@ -44,6 +45,7 @@ class PlayerTank(pygame.sprite.Sprite):
     WINDOW_HEIGHT = 600
     STARTING_X = 400  # 初始 X 座標（視窗寬度中心）
     STARTING_Y = 550  # 初始 Y 座標（靠近底部）
+    ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
 
     def __init__(self, x: int = STARTING_X, y: int = STARTING_Y) -> None:
         """
@@ -71,12 +73,48 @@ class PlayerTank(pygame.sprite.Sprite):
         # 射擊冷卻
         self.last_shoot_time = 0
 
-        # 建立坦克圖像（程序生成）
-        self.image = pygame.Surface((self.TANK_SIZE, self.TANK_SIZE), pygame.SRCALPHA)
-        self._draw_tank_image()
+        # 載入坦克圖像
+        self.image = self._load_tank_image()
+        if self.image is None:
+            # 如果圖片載入失敗，回退到程序生成
+            self.image = pygame.Surface(
+                (self.TANK_SIZE, self.TANK_SIZE), pygame.SRCALPHA
+            )
+            self._draw_tank_image()
 
         # 建立碰撞矩形
         self.rect = self.image.get_rect(center=(int(self.x), int(self.y)))
+
+    def _load_tank_image(self) -> Optional[pygame.Surface]:
+        """
+        載入玩家坦克圖像
+
+        根據當前方向載入對應的 PNG 圖像。
+        如果載入失敗，返回 None 並觸發回退到程序生成。
+
+        返回：
+            pygame.Surface - 載入的圖像（成功時），None（失敗時）
+        """
+        try:
+            # 建立圖像檔案名稱（使用小寫）
+            direction_file = {
+                "up": "tank_main_up.png",
+                "down": "tank_main_down.png",
+                "left": "tank_main_left.png",
+                "right": "tank_main_right.png",
+            }[self.direction]
+
+            # 載入圖像
+            image_path = self.ASSETS_DIR / direction_file
+            loaded_image = pygame.image.load(str(image_path))
+
+            # 調整圖像大小以符合坦克尺寸（保持寬高比）
+            return pygame.transform.scale(
+                loaded_image, (self.TANK_SIZE, self.TANK_SIZE)
+            )
+        except (FileNotFoundError, pygame.error):
+            # 載入失敗，返回 None
+            return None
 
     def _draw_tank_image(self) -> None:
         """
@@ -268,6 +306,11 @@ class PlayerTank(pygame.sprite.Sprite):
 
         # 重置方向
         self.direction = "up"
+        loaded = self._load_tank_image()
+        if loaded is not None:
+            self.image = loaded
+        else:
+            self._draw_tank_image()
 
         # 進入無敵狀態
         self.invincible = True
@@ -300,7 +343,11 @@ class PlayerTank(pygame.sprite.Sprite):
         if direction in ("up", "down", "left", "right"):
             if self.direction != direction:
                 self.direction = direction
-                self._draw_tank_image()
+                loaded = self._load_tank_image()
+                if loaded is not None:
+                    self.image = loaded
+                else:
+                    self._draw_tank_image()
 
     def get_position(self) -> Tuple[float, float]:
         """
@@ -331,9 +378,9 @@ class PlayerTank(pygame.sprite.Sprite):
 
     def handle_input(self, keys) -> None:
         """處理鍵盤輸入
-        
+
         根據按下的方向鍵設置坦克方向。
-        
+
         參數：
             keys: pygame.key.get_pressed() 返回的按鍵狀態
         """

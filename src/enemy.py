@@ -7,6 +7,7 @@
 
 import random
 import time
+from pathlib import Path
 from typing import Literal, Optional, Tuple
 
 import pygame
@@ -39,6 +40,7 @@ class EnemyTank(pygame.sprite.Sprite):
     TANK_SIZE = 40
     WINDOW_WIDTH = 800
     WINDOW_HEIGHT = 600
+    ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
 
     ENEMY_CONFIGS = {
         "basic": {
@@ -108,10 +110,47 @@ class EnemyTank(pygame.sprite.Sprite):
             )
         )
 
-        self.image = pygame.Surface((self.TANK_SIZE, self.TANK_SIZE), pygame.SRCALPHA)
-        self._draw_tank_image()
+        # 載入坦克圖像
+        self.image = self._load_tank_image()
+        if self.image is None:
+            # 如果圖片載入失敗，回退到程序生成
+            self.image = pygame.Surface(
+                (self.TANK_SIZE, self.TANK_SIZE), pygame.SRCALPHA
+            )
+            self._draw_tank_image()
 
         self.rect = self.image.get_rect(center=(int(self.x), int(self.y)))
+
+    def _load_tank_image(self) -> Optional[pygame.Surface]:
+        """
+        載入敵人坦克圖像
+
+        根據當前方向載入對應的 PNG 圖像。
+        如果載入失敗，返回 None 並觸發回退到程序生成。
+
+        返回：
+            pygame.Surface - 載入的圖像（成功時），None（失敗時）
+        """
+        try:
+            # 建立圖像檔案名稱（使用小寫）
+            direction_file = {
+                "up": "tank_enemy_up.png",
+                "down": "tank_enemy_down.png",
+                "left": "tank_enemy_left.png",
+                "right": "tank_enemy_right.png",
+            }[self.direction]
+
+            # 載入圖像
+            image_path = self.ASSETS_DIR / direction_file
+            loaded_image = pygame.image.load(str(image_path))
+
+            # 調整圖像大小以符合坦克尺寸（保持寬高比）
+            return pygame.transform.scale(
+                loaded_image, (self.TANK_SIZE, self.TANK_SIZE)
+            )
+        except (FileNotFoundError, pygame.error):
+            # 載入失敗，返回 None
+            return None
 
     def _draw_tank_image(self) -> None:
         """
@@ -238,6 +277,11 @@ class EnemyTank(pygame.sprite.Sprite):
 
         if current_time - self.last_direction_change >= self.move_interval:
             self.direction = random.choice(["up", "down", "left", "right"])
+            loaded = self._load_tank_image()
+            if loaded is not None:
+                self.image = loaded
+            else:
+                self._draw_tank_image()
             self.move_interval = random.randint(1000, 2000)
             self.last_direction_change = current_time
 
@@ -259,4 +303,9 @@ class EnemyTank(pygame.sprite.Sprite):
             self.rect.center = (int(self.x), int(self.y))
         else:
             self.direction = random.choice(["up", "down", "left", "right"])
+            loaded = self._load_tank_image()
+            if loaded is not None:
+                self.image = loaded
+            else:
+                self._draw_tank_image()
             self.last_direction_change = current_time

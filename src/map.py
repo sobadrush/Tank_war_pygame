@@ -6,7 +6,8 @@
 """
 
 import random
-from typing import List
+from pathlib import Path
+from typing import List, Optional
 
 import pygame
 
@@ -40,9 +41,14 @@ class Brick(pygame.sprite.Sprite):
         self.x = grid_x * self.SIZE
         self.y = grid_y * self.SIZE
 
-        # 建立磚塊圖像
-        self.image = pygame.Surface((self.SIZE, self.SIZE))
-        self.image.fill(self.COLOR)
+        # 使用預載入的圖像資源
+        if Map.brick_image is not None:
+            # 調整圖像大小
+            self.image = pygame.transform.scale(Map.brick_image, (self.SIZE, self.SIZE))
+        else:
+            # 回退到程序生成
+            self.image = pygame.Surface((self.SIZE, self.SIZE))
+            self.image.fill(self.COLOR)
 
         # 設定碰撞矩形位置
         self.rect = self.image.get_rect(topleft=(self.x, self.y))
@@ -92,9 +98,14 @@ class Steel(pygame.sprite.Sprite):
         self.x = grid_x * self.SIZE
         self.y = grid_y * self.SIZE
 
-        # 建立鋼塊圖像
-        self.image = pygame.Surface((self.SIZE, self.SIZE))
-        self.image.fill(self.COLOR)
+        # 使用預載入的圖像資源
+        if Map.steel_image is not None:
+            # 調整圖像大小
+            self.image = pygame.transform.scale(Map.steel_image, (self.SIZE, self.SIZE))
+        else:
+            # 回退到程序生成
+            self.image = pygame.Surface((self.SIZE, self.SIZE))
+            self.image.fill(self.COLOR)
 
         # 設定碰撞矩形位置
         self.rect = self.image.get_rect(topleft=(self.x, self.y))
@@ -126,6 +137,8 @@ class Map:
         obstacles: pygame.sprite.Group - 所有障礙物精靈組
         bricks: pygame.sprite.Group - 所有磚塊精靈組
         steels: pygame.sprite.Group - 所有鋼塊精靈組
+        brick_image: pygame.Surface - 磚塊圖像（靜態）
+        steel_image: pygame.Surface - 鋼塊圖像（靜態）
     """
 
     # 地圖常數設定
@@ -138,11 +151,20 @@ class Map:
     PLAYER_SPAWN_Y_MAX = 600  # 玩家起始區域Y最大（像素）
     OBSTACLE_MIN = 30  # 最小障礙物數量
     OBSTACLE_MAX = 50  # 最大障礙物數量
+    ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
+
+    # 靜態圖像資源
+    brick_image: Optional[pygame.Surface] = None
+    steel_image: Optional[pygame.Surface] = None
 
     def __init__(self) -> None:
         """
         初始化遊戲地圖，隨機生成障礙物
         """
+        # 載入圖像資源
+        Map.brick_image = self._load_image("brick.png")
+        Map.steel_image = self._load_image("wall.png")
+
         # 初始化精靈組
         self.obstacles = pygame.sprite.Group()
         self.bricks = pygame.sprite.Group()
@@ -193,6 +215,24 @@ class Map:
                 self.steels.add(obstacle)
 
             self.obstacles.add(obstacle)
+
+    @staticmethod
+    def _load_image(filename: str) -> Optional[pygame.Surface]:
+        """
+        載入圖像檔案
+
+        參數：
+            filename: 圖像檔案名稱
+
+        返回：
+            pygame.Surface - 載入的圖像（成功時），None（失敗時）
+        """
+        try:
+            image_path = Map.ASSETS_DIR / filename
+            image = pygame.image.load(str(image_path))
+            return image
+        except (FileNotFoundError, pygame.error):
+            return None
 
     def draw(self, surface: pygame.Surface) -> None:
         """
