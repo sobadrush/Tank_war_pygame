@@ -141,7 +141,7 @@ uv run mypy src/ main.py
 有任何問題或建議，歡迎通過 GitHub Issues 聯絡。
 
 ## 素材下載
-- https://www.bilibili.com/read/cv24103936/?opus_fallback=1
+- [素材下載連結](https://www.bilibili.com/read/cv24103936/?opus_fallback=1)
 
 ---
 
