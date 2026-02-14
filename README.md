@@ -143,6 +143,7 @@ uv run mypy src/ main.py
 
 ## 素材下載
 - [素材下載連結](https://www.bilibili.com/read/cv24103936/?opus_fallback=1)
+- [音效資源下載](https://taira-komori.net/arms01tw.html)
 
 ---
 
