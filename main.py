@@ -30,6 +30,9 @@ def main() -> None:
     # 初始化 pygame
     pygame.init()
 
+    # 初始化音效混音器
+    pygame.mixer.init()
+
     # 設定遊戲視窗
     WINDOW_WIDTH = 800
     WINDOW_HEIGHT = 600
@@ -76,15 +79,43 @@ def main() -> None:
             text = font.render("GAME OVER", True, (255, 0, 0))
             text_rect = text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2))
             screen.blit(text, text_rect)
-            
+
             font_small = pygame.font.Font(None, 36)
-            score_text = font_small.render(f"Final Score: {game.score}", True, (255, 255, 255))
-            score_rect = score_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 60))
+            score_text = font_small.render(
+                f"Final Score: {game.score}", True, (255, 255, 255)
+            )
+            score_rect = score_text.get_rect(
+                center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 60)
+            )
             screen.blit(score_text, score_rect)
-            
+
+            restart_text = font_small.render(
+                "Press R to Restart or Q to Quit", True, (255, 255, 255)
+            )
+            restart_rect = restart_text.get_rect(
+                center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 120)
+            )
+            screen.blit(restart_text, restart_rect)
+
             pygame.display.flip()
-            pygame.time.wait(3000)
-            running = False
+
+            # 等待玩家輸入
+            waiting_for_input = True
+            while waiting_for_input and running:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                        waiting_for_input = False
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_r:
+                            # 重新開始遊戲
+                            game.reset()
+                            waiting_for_input = False
+                        elif event.key == pygame.K_q:
+                            # 退出遊戲
+                            running = False
+                            waiting_for_input = False
+                clock.tick(30)  # 降低幀率以減少 CPU 使用
             continue
 
         if game.game_won:
@@ -94,15 +125,43 @@ def main() -> None:
             text = font.render("VICTORY!", True, (0, 255, 0))
             text_rect = text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2))
             screen.blit(text, text_rect)
-            
+
             font_small = pygame.font.Font(None, 36)
-            score_text = font_small.render(f"Final Score: {game.score}", True, (255, 255, 255))
-            score_rect = score_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 60))
+            score_text = font_small.render(
+                f"Final Score: {game.score}", True, (255, 255, 255)
+            )
+            score_rect = score_text.get_rect(
+                center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 60)
+            )
             screen.blit(score_text, score_rect)
-            
+
+            restart_text = font_small.render(
+                "Press R to Restart or Q to Quit", True, (255, 255, 255)
+            )
+            restart_rect = restart_text.get_rect(
+                center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 120)
+            )
+            screen.blit(restart_text, restart_rect)
+
             pygame.display.flip()
-            pygame.time.wait(3000)
-            running = False
+
+            # 等待玩家輸入
+            waiting_for_input = True
+            while waiting_for_input and running:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                        waiting_for_input = False
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_r:
+                            # 重新開始遊戲
+                            game.reset()
+                            waiting_for_input = False
+                        elif event.key == pygame.K_q:
+                            # 退出遊戲
+                            running = False
+                            waiting_for_input = False
+                clock.tick(30)  # 降低幀率以減少 CPU 使用
             continue
 
         # 獲取按鍵狀態

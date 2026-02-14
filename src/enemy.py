@@ -268,23 +268,19 @@ class EnemyTank(pygame.sprite.Sprite):
         更新敵人坦克的位置和方向
 
         根據計時器定期改變方向，嘗試按當前方向移動。
-        如果碰撞則隨機改變方向。
+        如果碰撞則嘗試找到一個可移動的方向。
 
         參數：
                 obstacles: list[pygame.Rect] - 障礙物列表
         """
         current_time = pygame.time.get_ticks()
 
+        # 定期改變方向
         if current_time - self.last_direction_change >= self.move_interval:
-            self.direction = random.choice(["up", "down", "left", "right"])
-            loaded = self._load_tank_image()
-            if loaded is not None:
-                self.image = loaded
-            else:
-                self._draw_tank_image()
-            self.move_interval = random.randint(1000, 2000)
+            self._choose_random_direction()
             self.last_direction_change = current_time
 
+        # 嘗試移動
         new_x, new_y = self.x, self.y
         if self.direction == "up":
             new_y -= self.speed
@@ -298,14 +294,69 @@ class EnemyTank(pygame.sprite.Sprite):
         new_rect = self.image.get_rect(center=(int(new_x), int(new_y)))
 
         if self.can_move(new_rect, obstacles):
+            # 可以移動，更新位置
             self.x = new_x
             self.y = new_y
             self.rect.center = (int(self.x), int(self.y))
         else:
-            self.direction = random.choice(["up", "down", "left", "right"])
-            loaded = self._load_tank_image()
-            if loaded is not None:
-                self.image = loaded
-            else:
-                self._draw_tank_image()
+            # 碰撞，嘗試找到一個可移動的方向
+            if not self._try_find_valid_direction(obstacles):
+                # 如果沒有可移動的方向，隨機選擇一個方向（避免死鎖）
+                self._choose_random_direction()
             self.last_direction_change = current_time
+
+    def _choose_random_direction(self) -> None:
+        """隨機選擇一個方向並更新坦克圖像"""
+        self.direction = random.choice(["up", "down", "left", "right"])
+        loaded = self._load_tank_image()
+        if loaded is not None:
+            self.image = loaded
+        else:
+            self._draw_tank_image()
+
+    def _try_find_valid_direction(self, obstacles: list[pygame.Rect]) -> bool:
+        """
+        嘗試找到一個可以移動的方向
+
+        遍歷所有方向，找到第一個可以移動的方向。
+        如果找不到任何可移動的方向，返回 False。
+
+        參數：
+                obstacles: list[pygame.Rect] - 障礙物列表
+
+        返回：
+                bool - True 找到可移動的方向，False 沒有找到
+        """
+        # 保存原始方向
+        original_direction = self.direction
+
+        # 遍歷所有方向
+        for direction in ["up", "down", "left", "right"]:
+            self.direction = direction
+
+            # 計算新位置
+            new_x, new_y = self.x, self.y
+            if direction == "up":
+                new_y -= self.speed
+            elif direction == "down":
+                new_y += self.speed
+            elif direction == "left":
+                new_x -= self.speed
+            elif direction == "right":
+                new_x += self.speed
+
+            new_rect = self.image.get_rect(center=(int(new_x), int(new_y)))
+
+            # 檢查是否可以移動
+            if self.can_move(new_rect, obstacles):
+                # 找到可移動的方向，更新圖像並返回 True
+                loaded = self._load_tank_image()
+                if loaded is not None:
+                    self.image = loaded
+                else:
+                    self._draw_tank_image()
+                return True
+
+        # 如果找不到可移動的方向，恢復原始方向
+        self.direction = original_direction
+        return False
