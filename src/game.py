@@ -14,6 +14,32 @@ from src.bullet import Bullet
 from src.map import Map
 
 
+class Explosion(pygame.sprite.Sprite):
+    """
+    爆炸效果精靈類別
+
+    短暫顯示爆炸動畫，持續時間後自動消失。
+    """
+
+    DURATION = 15  # 爆炸持續幀數（15 幀約 0.25 秒）
+
+    def __init__(self, x: int, y: int, image: pygame.Surface) -> None:
+        super().__init__()
+        self.image = image
+        self.rect = self.image.get_rect(center=(x, y))
+        self.timer = self.DURATION
+
+    def update(self) -> None:
+        """更新爆炸計時器"""
+        self.timer -= 1
+        if self.timer <= 0:
+            self.kill()
+
+    def draw(self, surface: pygame.Surface) -> None:
+        """繪製爆炸效果"""
+        surface.blit(self.image, self.rect)
+
+
 class Game:
     """遊戲管理器類別"""
 
@@ -28,6 +54,10 @@ class Game:
         self.shoot_sound = self._load_sound("shoot.mp3")
         self.game_win_sound = self._load_sound("game_win.mp3")
         self.game_over_sound = self._load_sound("game_over.mp3")
+        self.explode_sound = self._load_sound("explode.mp3")
+
+        # 載入爆炸圖片
+        self.explode_image = self._load_image("explode.png")
 
         # 創建地圖
         self.map = Map()
@@ -38,6 +68,7 @@ class Game:
         # 創建精靈組
         self.enemies = pygame.sprite.Group()
         self.bullets = pygame.sprite.Group()
+        self.explosions = pygame.sprite.Group()  # 爆炸效果精靈組
         self.all_sprites = pygame.sprite.Group()
 
         # 添加玩家到精靈組
@@ -60,6 +91,22 @@ class Game:
         enemy_count = random.randint(3, 5)
         for _ in range(enemy_count):
             self.spawn_enemy()
+
+    def _create_explosion(self, x: int, y: int) -> None:
+        """
+        在指定位置建立爆炸效果
+
+        參數：
+            x: 爆炸中心 X 座標
+            y: 爆炸中心 Y 座標
+        """
+        if self.explode_image is not None:
+            explosion = Explosion(x, y, self.explode_image)
+            self.explosions.add(explosion)
+            self.all_sprites.add(explosion)
+            # 播放爆炸音效
+            if self.explode_sound:
+                self.explode_sound.play()
 
     def _is_spawn_position_clear(self, rect: pygame.Rect) -> bool:
         """
@@ -161,6 +208,9 @@ class Game:
         # 更新子彈
         self.bullets.update()
 
+        # 更新爆炸效果
+        self.explosions.update()
+
         # 檢查碰撞
         self._check_collisions()
 
@@ -180,8 +230,12 @@ class Game:
                         if enemy.lives <= 0:
                             enemy.kill()
                             self.score += 100
+                            # 敵人死亡時播放爆炸效果
+                            self._create_explosion(
+                                bullet.rect.centerx, bullet.rect.centery
+                            )
 
-        # 敵人子彈擊中玩家
+        # 敵人子彈擊中玩家（不播放爆炸音效）
         for bullet in self.bullets:
             if bullet.owner == "enemy":
                 if bullet.rect.colliderect(self.player.rect):
@@ -207,6 +261,11 @@ class Game:
                 for obstacle in hit_obstacles:
                     if obstacle in self.map.bricks:
                         self.map.destroy_brick(obstacle)
+                        # 只有玩家子彈擊中 brick 時才播放爆炸效果
+                        if bullet.owner == "player":
+                            self._create_explosion(
+                                bullet.rect.centerx, bullet.rect.centery
+                            )
 
     def _check_game_over(self):
         """檢查遊戲結束條件"""
@@ -230,6 +289,23 @@ class Game:
             # 播放射擊音效
             if self.shoot_sound:
                 self.shoot_sound.play()
+
+    def _load_image(self, filename: str) -> Optional[pygame.Surface]:
+        """
+        載入圖像檔案
+
+        參數：
+            filename: 圖像檔案名稱
+
+        返回：
+            pygame.Surface - 載入的圖像（成功時），None（失敗時）
+        """
+        try:
+            image_path = self.ASSETS_DIR / filename
+            image = pygame.image.load(str(image_path))
+            return image
+        except (FileNotFoundError, pygame.error):
+            return None
 
     def _load_sound(self, filename: str) -> Optional[pygame.mixer.Sound]:
         """
@@ -267,6 +343,7 @@ class Game:
         # 清除所有精靈
         self.enemies.empty()
         self.bullets.empty()
+        self.explosions.empty()
         self.all_sprites.empty()
 
         # 重新生成地圖（新的障礙物和草叢位置）
@@ -305,6 +382,9 @@ class Game:
         # 繪製所有精靈（坦克、子彈等）
         for sprite in self.all_sprites:
             sprite.draw(screen)
+
+        # 繪製爆炸效果（在草叢下方）
+        self.explosions.draw(screen)
 
         # 繪製草叢（在最上層，遮擋坦克）
         self.map.bushes.draw(screen)
