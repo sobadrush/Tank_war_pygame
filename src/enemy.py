@@ -45,16 +45,19 @@ class EnemyTank(pygame.sprite.Sprite):
     ENEMY_CONFIGS = {
         "basic": {
             "speed": 2,
+            "base_speed": 2,
             "lives": 1,
             "color": (255, 0, 0),
         },
         "fast": {
             "speed": 4,
+            "base_speed": 4,
             "lives": 1,
             "color": (0, 255, 0),
         },
         "heavy": {
             "speed": 2,
+            "base_speed": 2,
             "lives": 2,
             "color": (128, 128, 128),
         },
@@ -90,6 +93,7 @@ class EnemyTank(pygame.sprite.Sprite):
         self.enemy_type = enemy_type
         config = self.ENEMY_CONFIGS[enemy_type]
         self.speed = config["speed"]
+        self.base_speed = config["base_speed"]
         self.lives = config["lives"]
         self.color = config["color"]
 
