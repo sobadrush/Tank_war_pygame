@@ -257,7 +257,7 @@ class Map:
         Map.brick_image = self._load_image("brick.png")
         Map.steel_image = self._load_image("wall.png")
         Map.bush_image = self._load_image("bush.png")
-        Map.slow_zone_image = self._load_image("slow-speed.jpg")
+        Map.slow_zone_image = self._load_image("slow-speed.png")
 
         # 初始化精靈組
         self.obstacles = pygame.sprite.Group()
