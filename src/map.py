@@ -172,6 +172,38 @@ class Bush(pygame.sprite.Sprite):
         surface.blit(self.image, self.rect)
 
 
+class SlowZone(pygame.sprite.Sprite):
+    """
+    減速地帶精靈類別
+
+    坦克可穿越的地圖元素，進入後速度減半，離開後恢復。
+    繪製在障礙物後、草叢前。
+
+    屬性：
+        rect: pygame.Rect - 碰撞區域
+        image: pygame.Surface - 顯示圖像
+    """
+
+    SIZE = 40
+    COLOR = (0, 0, 200)  # 回退顏色（藍色）
+
+    def __init__(self, grid_x: int, grid_y: int) -> None:
+        super().__init__()
+        self.x = grid_x * self.SIZE
+        self.y = grid_y * self.SIZE
+
+        if Map.slow_zone_image is not None:
+            self.image = pygame.transform.scale(Map.slow_zone_image, (self.SIZE, self.SIZE))
+        else:
+            self.image = pygame.Surface((self.SIZE, self.SIZE))
+            self.image.fill(self.COLOR)
+
+        self.rect = self.image.get_rect(topleft=(self.x, self.y))
+
+    def draw(self, surface: pygame.Surface) -> None:
+        surface.blit(self.image, self.rect)
+
+
 class Map:
     """
     遊戲地圖類別
@@ -213,6 +245,7 @@ class Map:
     brick_image: Optional[pygame.Surface] = None
     steel_image: Optional[pygame.Surface] = None
     bush_image: Optional[pygame.Surface] = None
+    slow_zone_image: Optional[pygame.Surface] = None
 
     def __init__(self) -> None:
         """
@@ -222,16 +255,19 @@ class Map:
         Map.brick_image = self._load_image("brick.png")
         Map.steel_image = self._load_image("wall.png")
         Map.bush_image = self._load_image("bush.png")
+        Map.slow_zone_image = self._load_image("slow-speed.jpg")
 
         # 初始化精靈組
         self.obstacles = pygame.sprite.Group()
         self.bricks = pygame.sprite.Group()
         self.steels = pygame.sprite.Group()
         self.bushes = pygame.sprite.Group()
+        self.slow_zones = pygame.sprite.Group()
 
-        # 隨機生成障礙物和草叢
+        # 隨機生成障礙物、草叢與減速地帶
         self._generate_random_obstacles()
         self._generate_random_bushes()
+        self._generate_slow_zones()
 
     def _generate_random_obstacles(self) -> None:
         """
@@ -358,6 +394,44 @@ class Map:
             bush = Bush(grid_x, grid_y)
             self.bushes.add(bush)
 
+    def _generate_slow_zones(self) -> None:
+        """
+        隨機生成地圖上的減速地帶
+
+        - 隨機選擇 2-3 個格子放置 SlowZone
+        - 避免在玩家起始區域和已有障礙物的位置放置
+        - SlowZone 不阻擋坦克，但進入後減速
+        """
+        safe_zone_grid_x_min = self.PLAYER_SPAWN_X_MIN // self.GRID_SIZE
+        safe_zone_grid_x_max = (self.PLAYER_SPAWN_X_MAX // self.GRID_SIZE) + 1
+        safe_zone_grid_y_min = self.PLAYER_SPAWN_Y_MIN // self.GRID_SIZE
+        safe_zone_grid_y_max = (self.PLAYER_SPAWN_Y_MAX // self.GRID_SIZE) + 1
+
+        obstacle_positions = {
+            (obstacle.x // self.GRID_SIZE, obstacle.y // self.GRID_SIZE)
+            for obstacle in self.obstacles
+        }
+
+        available_positions = []
+        for grid_y in range(self.MAP_HEIGHT):
+            for grid_x in range(self.MAP_WIDTH):
+                if not (
+                    safe_zone_grid_x_min <= grid_x <= safe_zone_grid_x_max
+                    and safe_zone_grid_y_min <= grid_y <= safe_zone_grid_y_max
+                ):
+                    if (grid_x, grid_y) not in obstacle_positions:
+                        available_positions.append((grid_x, grid_y))
+
+        num_slow_zones = random.randint(2, 3)
+        if len(available_positions) >= num_slow_zones:
+            selected = random.sample(available_positions, num_slow_zones)
+        else:
+            selected = available_positions
+
+        for grid_x, grid_y in selected:
+            slow_zone = SlowZone(grid_x, grid_y)
+            self.slow_zones.add(slow_zone)
+
     @staticmethod
     def _load_image(filename: str) -> Optional[pygame.Surface]:
         """
@@ -383,6 +457,8 @@ class Map:
         參數：
             surface: pygame.Surface - 目標繪製表面（通常是遊戲螢幕）
         """
+        # 先繪製減速地帶（底層），再繪製障礙物
+        self.slow_zones.draw(surface)
         self.obstacles.draw(surface)
 
     def get_obstacles_rects(self) -> List[pygame.Rect]:
@@ -393,6 +469,15 @@ class Map:
             List[pygame.Rect] - 所有障礙物的矩形列表
         """
         return [obstacle.rect for obstacle in self.obstacles]
+
+    def get_slow_zone_rects(self) -> List[pygame.Rect]:
+        """
+        取得所有減速地帶的碰撞矩形
+
+        返回：
+            List[pygame.Rect] - 所有 SlowZone 的矩形列表
+        """
+        return [sz.rect for sz in self.slow_zones]
 
     def destroy_brick(self, brick: Brick) -> None:
         """
