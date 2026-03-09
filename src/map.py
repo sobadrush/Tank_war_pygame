@@ -226,6 +226,8 @@ class Map:
         brick_image: pygame.Surface - 磚塊圖像（靜態）
         steel_image: pygame.Surface - 鋼塊圖像（靜態）
         bush_image: pygame.Surface - 草叢圖像（靜態）
+        slow_zones: pygame.sprite.Group - 所有減速地帶精靈組
+        slow_zone_image: pygame.Surface - 減速地帶圖像（靜態）
     """
 
     # 地圖常數設定
