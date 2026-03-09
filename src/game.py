@@ -211,6 +211,9 @@ class Game:
         # 更新爆炸效果
         self.explosions.update()
 
+        # 套用減速地帶效果
+        self._apply_slow_zone_effects()
+
         # 檢查碰撞
         self._check_collisions()
 
@@ -266,6 +269,30 @@ class Game:
                             self._create_explosion(
                                 bullet.rect.centerx, bullet.rect.centery
                             )
+
+    def _apply_slow_zone_effects(self) -> None:
+        """
+        偵測所有坦克與減速地帶的碰撞，動態調整移動速度。
+
+        進入 SlowZone：速度 = base_speed * 0.5
+        離開 SlowZone：速度 = base_speed
+        """
+        slow_zone_rects = self.map.get_slow_zone_rects()
+
+        # 玩家坦克速度調整
+        player_in_slow = any(
+            self.player.rect.colliderect(sz_rect) for sz_rect in slow_zone_rects
+        )
+        self.player.speed = (
+            PlayerTank.TANK_SPEED * 0.5 if player_in_slow else PlayerTank.TANK_SPEED
+        )
+
+        # 敵人坦克速度調整
+        for enemy in self.enemies:
+            enemy_in_slow = any(
+                enemy.rect.colliderect(sz_rect) for sz_rect in slow_zone_rects
+            )
+            enemy.speed = enemy.base_speed * 0.5 if enemy_in_slow else enemy.base_speed
 
     def _check_game_over(self):
         """檢查遊戲結束條件"""
